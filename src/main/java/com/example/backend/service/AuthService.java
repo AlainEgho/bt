@@ -52,7 +52,7 @@ public class AuthService {
 
         Role userRole = roleRepository.findByName(Role.RoleName.ROLE_USER)
                 .orElseThrow(() -> new IllegalStateException("Default role ROLE_USER not found"));
-        user.getRoles().add(userRole);
+        user.getRoles().add(roleRepository.getReferenceById(userRole.getId()));
 
         user = userRepository.save(user);
 
