@@ -5,6 +5,7 @@ import com.example.backend.dto.LoginRequest;
 import com.example.backend.dto.SignUpRequest;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
+import com.example.backend.entity.UserType;
 import com.example.backend.entity.VerificationToken;
 import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
@@ -48,6 +49,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAddress(request.getAddress());
         user.setPhoneNumber(request.getPhoneNumber());
+        user.setUserType(request.getUserType() != null ? request.getUserType() : UserType.INDIVIDUAL);
         user.setEmailVerified(false);
 
         Role userRole = roleRepository.findByName(Role.RoleName.ROLE_USER)

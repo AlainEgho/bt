@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.example.backend.entity.Role;
+import com.example.backend.entity.UserType;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ public class AuthResponse {
     private String email;
     private String firstName;
     private String lastName;
+    private UserType userType;
     private boolean emailVerified;
     private Set<String> roles;
 
@@ -37,6 +39,7 @@ public class AuthResponse {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .userType(user.getUserType())
                 .emailVerified(user.isEmailVerified())
                 .roles(roleNames)
                 .build();

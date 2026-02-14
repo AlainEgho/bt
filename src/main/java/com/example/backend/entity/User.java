@@ -38,6 +38,10 @@ public class User {
     @Column(length = 30)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", nullable = false, length = 20)
+    private UserType userType = UserType.INDIVIDUAL;
+
     @Column(nullable = false)
     private boolean emailVerified = false;
 

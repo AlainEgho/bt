@@ -2,6 +2,7 @@ package com.example.backend.config;
 
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
+import com.example.backend.entity.UserType;
 import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
         admin.setLastName("User");
         admin.setEmail(adminEmail);
         admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setUserType(UserType.INDIVIDUAL);
         admin.setEmailVerified(true);
         admin.getRoles().add(roleRepository.getReferenceById(adminRole.getId()));
         userRepository.save(admin);

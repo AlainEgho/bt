@@ -1,5 +1,6 @@
 package com.example.backend.dto;
 
+import com.example.backend.entity.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -30,4 +31,7 @@ public class SignUpRequest {
 
     @Size(max = 30)
     private String phoneNumber;
+
+    /** Optional. Defaults to INDIVIDUAL if not set. */
+    private UserType userType;
 }
