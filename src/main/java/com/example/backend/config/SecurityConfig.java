@@ -62,7 +62,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/invoices/**", "/api/shorteners/**").authenticated()
+                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

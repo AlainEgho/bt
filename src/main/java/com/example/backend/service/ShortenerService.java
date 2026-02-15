@@ -31,6 +31,14 @@ public class ShortenerService {
                 .toList();
     }
 
+    /** List all short links (QR codes) across all users. For admin only. */
+    @Transactional(readOnly = true)
+    public List<ShortenerResponse> findAllForAdmin() {
+        return shortenerRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(ShortenerResponse::fromEntity)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public ShortenerResponse findById(Long id, Long userId) {
         Shortener s = shortenerRepository.findById(id)

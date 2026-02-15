@@ -13,4 +13,6 @@ public interface ShortenerRepository extends JpaRepository<Shortener, Long> {
     boolean existsByShortCode(String shortCode);
 
     List<Shortener> findByUser_IdOrderByCreatedAtDesc(Long userId);
+
+    List<Shortener> findAllByOrderByCreatedAtDesc();
 }
