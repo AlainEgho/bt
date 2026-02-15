@@ -37,6 +37,7 @@ public class SecurityConfig {
             "/api/auth/**",
             "/api/health",
             "/s/**",           // short link redirect (no auth)
+            "/i/**",           // image serve by short code (no auth)
             "/h2-console/**",
             "/error"
     };
@@ -62,7 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**").authenticated()
+                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

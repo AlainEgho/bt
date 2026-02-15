@@ -27,6 +27,9 @@ buildNumber.properties
 *.ear
 hs_err_pid*
 
+# Uploaded images (server storage)
+uploads/
+
 # OS
 .DS_Store
 Thumbs.db
