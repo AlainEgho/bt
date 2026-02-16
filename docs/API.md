@@ -570,7 +570,175 @@ Returns the image file. No authentication. Use this URL in a QR code or short li
 
 ---
 
-## 6. Short link redirect (public)
+## 6. Categories API
+
+Base path: `/api/categories`. Categories use **UUID** as the identifier (not Long).
+
+**Note:** `GET /api/categories` is **public** (no authentication). POST, PUT, DELETE require JWT. Categories have an **active** flag; list endpoints return **only active** categories (admin list returns all).
+
+### 6.1 List all categories (public)
+
+| Method | URL                 |
+|--------|---------------------|
+| GET    | `/api/categories`   |
+
+**No authentication required.** Returns **active** categories from all users.
+
+**Success (200 OK)**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "description": "Work",
+      "imageUrl": "http://localhost:8081/api/categories/images/550e8400-e29b-41d4-a716-446655440000",
+      "active": true,
+      "userId": 1,
+      "createdAt": "2025-02-01T12:00:00Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+**Note:** `imageUrl` is `null` if the category has no image. Only **active** categories are returned.
+
+---
+
+### 6.2 Get category by ID
+
+| Method | URL                      |
+|--------|--------------------------|
+| GET    | `/api/categories/{id}`   |
+
+**Path parameter:** `id` is a UUID (e.g. `550e8400-e29b-41d4-a716-446655440000`).  
+**Auth:** JWT required.
+
+**Success (200 OK):** `data` is a single category object.  
+**Error (400):** Category not found or not owned by the current user.
+
+---
+
+### 6.3 Create category
+
+| Method | URL                 |
+|--------|---------------------|
+| POST   | `/api/categories`   |
+
+**Auth:** JWT required.
+
+**Request body**
+
+| Field             | Type    | Required | Description                                      |
+|-------------------|--------|----------|--------------------------------------------------|
+| description       | string  | yes      | Max 500 characters                               |
+| imageBase64       | string  | no       | Base64 image data (raw or data URL format)       |
+| imageContentType  | string  | no       | e.g. image/png, image/jpeg; required if imageBase64 is not a data URL |
+| active            | boolean | no       | Default true. If false, category is inactive and excluded from list endpoints. |
+
+**Example**
+
+```json
+{
+  "description": "Personal",
+  "imageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "imageContentType": "image/png",
+  "active": true
+}
+```
+
+**Success (201 Created)**
+
+```json
+{
+  "success": true,
+  "message": "Category created",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "description": "Personal",
+    "imageUrl": "http://localhost:8081/api/categories/images/550e8400-e29b-41d4-a716-446655440000",
+    "active": true,
+    "userId": 1,
+    "createdAt": "2025-02-01T12:00:00Z",
+    "updatedAt": null
+  }
+}
+```
+
+**Errors:** 
+- 400 if user not found or validation fails.
+- 500 if image save fails (e.g. invalid Base64, disk error).
+
+---
+
+### 6.4 Update category
+
+| Method | URL                      |
+|--------|--------------------------|
+| PUT    | `/api/categories/{id}`   |
+
+**Auth:** JWT required.
+
+**Request body**
+
+| Field             | Type    | Required | Description                                      |
+|-------------------|--------|----------|--------------------------------------------------|
+| description       | string  | yes      | Max 500 characters                               |
+| imageBase64       | string  | no       | Base64 image data (raw or data URL format). If provided, replaces existing image. |
+| imageContentType  | string  | no       | e.g. image/png, image/jpeg; required if imageBase64 is not a data URL |
+| active            | boolean | no       | If provided, sets active/inactive. Inactive categories are excluded from list endpoints. |
+
+**Example**
+
+```json
+{
+  "description": "Personal Updated",
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+  "active": false
+}
+```
+
+**Success (200 OK):** `data` is the updated category (includes `imageUrl` if image was provided).  
+**Errors:** 
+- 400 if category not found or not owned by the current user.
+- 500 if image save fails.
+
+---
+
+### 6.5 Delete category
+
+| Method | URL                      |
+|--------|--------------------------|
+| DELETE | `/api/categories/{id}`   |
+
+**Auth:** JWT required.
+
+**Success (200 OK):** `message`: "Category deleted", `data`: null.  
+**Errors:** 
+- 400 if category not found or not owned by the current user.
+- 500 if image deletion fails.
+
+---
+
+### 6.6 Serve category image (public)
+
+Returns the image file for a category. No authentication required.
+
+| Method | URL                                    |
+|--------|----------------------------------------|
+| GET    | `/api/categories/images/{categoryId}` |
+
+**Path parameter:** `categoryId` is a UUID.
+
+**Success (200 OK):** Response body is the image binary; `Content-Type` is the stored type (e.g. image/png).  
+**Error (404):** Category not found or image missing.
+
+---
+
+## 7. Short link redirect (public)
 
 Resolve a short code and redirect to the full URL. No authentication. Increments the click count.
 
@@ -583,11 +751,11 @@ Resolve a short code and redirect to the full URL. No authentication. Increments
 
 ---
 
-## 7. Admin API
+## 8. Admin API
 
 Requires a user with role **ADMIN** and a valid JWT.
 
-### 7.1 Dashboard
+### 8.1 Dashboard
 
 | Method | URL                     |
 |--------|-------------------------|
@@ -611,7 +779,7 @@ Requires a user with role **ADMIN** and a valid JWT.
 
 ---
 
-### 7.2 List all QR codes (admin)
+### 8.2 List all QR codes (admin)
 
 Returns all short links (QR codes) from all users. Admin only.
 
@@ -646,7 +814,7 @@ Each item includes `userId` so the admin can see which user owns the link. **Err
 
 ---
 
-### 7.3 List all image uploads (admin)
+### 8.3 List all image uploads (admin)
 
 Returns all Base64-uploaded images from all users. Admin only.
 
@@ -657,6 +825,20 @@ Returns all Base64-uploaded images from all users. Admin only.
 **Headers:** `Authorization: Bearer <token>` (admin user).
 
 **Success (200 OK):** `data` is an array of image upload responses (id, shortCode, imageUrl, contentType, userId, createdAt, etc.). **Error (403):** User is not an admin.
+
+---
+
+### 8.4 List all categories (admin)
+
+Returns **all** categories from all users (active and inactive). Admin only.
+
+| Method | URL                          |
+|--------|------------------------------|
+| GET    | `/api/admin/categories`      |
+
+**Headers:** `Authorization: Bearer <token>` (admin user).
+
+**Success (200 OK):** `data` is an array of category responses (id, description, imageUrl, active, userId, createdAt, updatedAt). **Error (403):** User is not an admin.
 
 ---
 
@@ -676,8 +858,13 @@ Returns all Base64-uploaded images from all users. Admin only.
 | Shorteners | /api/shorteners/{id}        | GET, PUT, DELETE | JWT |
 | Image uploads | /api/image-uploads       | GET, POST | JWT   |
 | Image uploads | /api/image-uploads/{id}   | GET    | JWT   |
+| Categories | /api/categories            | GET | No (public) |
+| Categories | /api/categories            | POST | JWT   |
+| Categories | /api/categories/{id}       | GET, PUT, DELETE | JWT |
+| Categories | /api/categories/images/{categoryId} | GET | No (public) |
 | Serve image   | /i/{code}                  | GET    | No      |
 | Redirect   | /s/{code}                   | GET    | No      |
 | Admin      | /api/admin/dashboard        | GET    | JWT (ADMIN) |
 | Admin      | /api/admin/qr-codes         | GET    | JWT (ADMIN) |
 | Admin      | /api/admin/image-uploads    | GET    | JWT (ADMIN) |
+| Admin      | /api/admin/categories       | GET    | JWT (ADMIN) |

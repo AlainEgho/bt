@@ -36,8 +36,10 @@ public class SecurityConfig {
     private static final String[] PUBLIC_URLS = {
             "/api/auth/**",
             "/api/health",
-            "/s/**",           // short link redirect (no auth)
-            "/i/**",           // image serve by short code (no auth)
+            "/api/categories",           // GET categories (public)
+            "/api/categories/images/**", // GET category images (public)
+            "/s/**",                     // short link redirect (no auth)
+            "/i/**",                     // image serve by short code (no auth)
             "/h2-console/**",
             "/error"
     };
@@ -63,7 +65,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**").authenticated()
+                        .requestMatchers("/api/categories/images/**").permitAll()
+                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
