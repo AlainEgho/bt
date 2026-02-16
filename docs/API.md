@@ -738,7 +738,167 @@ Returns the image file for a category. No authentication required.
 
 ---
 
-## 7. Short link redirect (public)
+## 7. Items API
+
+Base path: `/api/items`. Items have String id (UUID string), same image/active pattern as categories, and belong to a **category**. They can have optional **detail** (quantity, price), **address** (name, longitude, latitude), and **contact** (firstName, lastName, phone).
+
+- **GET /api/items** is **public** (active items only). POST, PUT, DELETE require JWT.
+- **GET /api/items/images/** is public for serving item images.
+
+### 7.1 List all items (public)
+
+| Method | URL           |
+|--------|---------------|
+| GET    | `/api/items`  |
+
+Returns **active** items from all users. Each item includes `id`, `description`, `imageUrl`, `active`, `userId`, `categoryId`, `detail` (quantity, price), `address` (addressName, longitude, latitude), `contact` (firstName, lastName, phone), `createdAt`, `updatedAt`.
+
+**Success (200 OK) – response example**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "description": "Wedding cake",
+      "imageUrl": "http://localhost:8081/api/items/images/1/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "active": true,
+      "userId": 1,
+      "categoryId": "f454e28a-00ec-4ea9-bd44-2729b947b6bf",
+      "detail": {
+        "id": 1,
+        "quantity": 2,
+        "price": 450.5000
+      },
+      "address": {
+        "id": 1,
+        "addressName": "Grand Ballroom",
+        "longitude": -73.9857,
+        "latitude": 40.7484
+      },
+      "contact": {
+        "id": 1,
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "phone": "+1 555 123 4567"
+      },
+      "createdAt": "2025-02-16T12:00:00Z",
+      "updatedAt": null
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "description": "Floral centerpieces",
+      "imageUrl": null,
+      "active": true,
+      "userId": 1,
+      "categoryId": "f454e28a-00ec-4ea9-bd44-2729b947b6bf",
+      "detail": null,
+      "address": null,
+      "contact": null,
+      "createdAt": "2025-02-16T11:30:00Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+`detail`, `address`, and `contact` are optional; they are `null` when not set. `imageUrl` is `null` when the item has no image.
+
+### 7.2 Get items by category (public)
+
+| Method | URL                            |
+|--------|--------------------------------|
+| GET    | `/api/items/category/{categoryId}` |
+
+Returns **active** items that belong to the given category. No authentication required.
+
+**Success (200 OK):** `data` is an array of item responses (same shape as 7.1).
+
+### 7.3 Get item by ID
+
+| Method | URL                |
+|--------|--------------------|
+| GET    | `/api/items/{id}`  |
+
+**Auth:** JWT required. **Success (200 OK):** single item with detail, address, contact. **Error (400):** Item not found or not owned by user.
+
+### 7.4 Create item
+
+| Method | URL           |
+|--------|---------------|
+| POST   | `/api/items`  |
+
+**Auth:** JWT required.
+
+**Request body:** `description` (required), `categoryId` (required), `imageBase64`, `imageContentType`, `active`, `detail` (optional: `quantity`, `price`), `address` (optional: `addressName`, `longitude`, `latitude`), `contact` (optional: `firstName`, `lastName`, `phone`).
+
+**Request body example (full – with detail, address, contact, image):**
+
+```json
+{
+  "description": "Wedding cake - 3 tiers",
+  "categoryId": "f454e28a-00ec-4ea9-bd44-2729b947b6bf",
+  "imageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "imageContentType": "image/png",
+  "active": true,
+  "detail": {
+    "quantity": 2,
+    "price": 450.50
+  },
+  "address": {
+    "addressName": "Grand Ballroom, 5th Ave",
+    "longitude": -73.9857,
+    "latitude": 40.7484
+  },
+  "contact": {
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "phone": "+1 555 123 4567"
+  }
+}
+```
+
+**Minimal request (only required fields):**
+
+```json
+{
+  "description": "Floral centerpieces",
+  "categoryId": "f454e28a-00ec-4ea9-bd44-2729b947b6bf"
+}
+```
+
+**Success (201 Created):** Item with image saved first, then entity persisted (same flow as categories).
+
+### 7.5 Update item
+
+| Method | URL                |
+|--------|--------------------|
+| PUT    | `/api/items/{id}`  |
+
+**Auth:** JWT required. Same fields as create (except `categoryId`). Image/detail/address/contact can be updated or added.
+
+### 7.6 Delete item
+
+| Method | URL                |
+|--------|--------------------|
+| DELETE | `/api/items/{id}`  |
+
+**Auth:** JWT required.
+
+### 7.7 Serve item image (public)
+
+| Method | URL                                  |
+|--------|--------------------------------------|
+| GET    | `/api/items/images/{userId}/{itemId}` |
+| GET    | `/api/items/images/{itemId}`         |
+
+Returns the image binary. **Error (404):** Item not found or image missing.
+
+---
+
+## 8. Short link redirect (public)
 
 Resolve a short code and redirect to the full URL. No authentication. Increments the click count.
 
@@ -751,11 +911,11 @@ Resolve a short code and redirect to the full URL. No authentication. Increments
 
 ---
 
-## 8. Admin API
+## 9. Admin API
 
 Requires a user with role **ADMIN** and a valid JWT.
 
-### 8.1 Dashboard
+### 9.1 Dashboard (admin)
 
 | Method | URL                     |
 |--------|-------------------------|
@@ -779,7 +939,7 @@ Requires a user with role **ADMIN** and a valid JWT.
 
 ---
 
-### 8.2 List all QR codes (admin)
+### 9.2 List all QR codes (admin)
 
 Returns all short links (QR codes) from all users. Admin only.
 
@@ -814,7 +974,7 @@ Each item includes `userId` so the admin can see which user owns the link. **Err
 
 ---
 
-### 8.3 List all image uploads (admin)
+### 9.3 List all image uploads (admin)
 
 Returns all Base64-uploaded images from all users. Admin only.
 
@@ -828,7 +988,7 @@ Returns all Base64-uploaded images from all users. Admin only.
 
 ---
 
-### 8.4 List all categories (admin)
+### 9.4 List all categories (admin)
 
 Returns **all** categories from all users (active and inactive). Admin only.
 
@@ -839,6 +999,20 @@ Returns **all** categories from all users (active and inactive). Admin only.
 **Headers:** `Authorization: Bearer <token>` (admin user).
 
 **Success (200 OK):** `data` is an array of category responses (id, description, imageUrl, active, userId, createdAt, updatedAt). **Error (403):** User is not an admin.
+
+---
+
+### 9.5 List all items (admin)
+
+Returns **all** items from all users (active and inactive). Admin only.
+
+| Method | URL                     |
+|--------|-------------------------|
+| GET    | `/api/admin/items`      |
+
+**Headers:** `Authorization: Bearer <token>` (admin user).
+
+**Success (200 OK):** `data` is an array of item responses (id, description, imageUrl, active, userId, categoryId, detail, address, contact, createdAt, updatedAt). **Error (403):** User is not an admin.
 
 ---
 
@@ -862,9 +1036,15 @@ Returns **all** categories from all users (active and inactive). Admin only.
 | Categories | /api/categories            | POST | JWT   |
 | Categories | /api/categories/{id}       | GET, PUT, DELETE | JWT |
 | Categories | /api/categories/images/{categoryId} | GET | No (public) |
+| Items      | /api/items                 | GET | No (public) |
+| Items      | /api/items/category/{categoryId} | GET | No (public) |
+| Items      | /api/items                 | POST | JWT   |
+| Items      | /api/items/{id}            | GET, PUT, DELETE | JWT |
+| Items      | /api/items/images/{userId}/{itemId} or /{itemId} | GET | No (public) |
 | Serve image   | /i/{code}                  | GET    | No      |
 | Redirect   | /s/{code}                   | GET    | No      |
 | Admin      | /api/admin/dashboard        | GET    | JWT (ADMIN) |
 | Admin      | /api/admin/qr-codes         | GET    | JWT (ADMIN) |
-| Admin      | /api/admin/image-uploads    | GET    | JWT (ADMIN) |
-| Admin      | /api/admin/categories       | GET    | JWT (ADMIN) |
+| Admin      | /api/admin/image-uploads   | GET    | JWT (ADMIN) |
+| Admin      | /api/admin/categories      | GET    | JWT (ADMIN) |
+| Admin      | /api/admin/items            | GET    | JWT (ADMIN) |

@@ -37,9 +37,12 @@ public class SecurityConfig {
             "/api/auth/**",
             "/api/health",
             "/api/categories",           // GET categories (public)
-            "/api/categories/images/**", // GET category images (public)
-            "/s/**",                     // short link redirect (no auth)
-            "/i/**",                     // image serve by short code (no auth)
+            "/api/categories/images/**",
+            "/api/items",                // GET items (public)
+            "/api/items/category/**",    // GET items by category (public)
+            "/api/items/images/**",
+            "/s/**",
+            "/i/**",
             "/h2-console/**",
             "/error"
     };
@@ -66,7 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/categories/images/**").permitAll()
-                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**").authenticated()
+                        .requestMatchers("/api/items/images/**").permitAll()
+                        .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
