@@ -898,7 +898,222 @@ Returns the image binary. **Error (404):** Item not found or image missing.
 
 ---
 
-## 8. Short link redirect (public)
+## 8. Carts API
+
+Base path: `/api/carts`. A user can have multiple carts. Each cart contains multiple items with quantities. Cart has a status (PENDING, PAID, CANCELLED, COMPLETED) and an optional event date.
+
+**All cart endpoints require authentication:** `Authorization: Bearer <token>`.
+
+### 8.1 List my carts
+
+| Method | URL           |
+|--------|---------------|
+| GET    | `/api/carts`  |
+
+**Query parameter (optional):** `status` (PENDING, PAID, CANCELLED, COMPLETED) to filter by status.
+
+**Success (200 OK) – response example:**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "c1d2e3f4-a5b6-7890-cdef-123456789012",
+      "userId": 1,
+      "status": "PENDING",
+      "eventDate": "2025-06-15",
+      "items": [
+        {
+          "id": 1,
+          "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "quantity": 2
+        },
+        {
+          "id": 2,
+          "itemId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2025-02-16T10:00:00Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+### 8.2 Get cart by ID
+
+| Method | URL                |
+|--------|--------------------|
+| GET    | `/api/carts/{id}`  |
+
+**Success (200 OK):** Single cart with items. **Error (400):** Cart not found or not owned by user.
+
+### 8.3 Create cart
+
+| Method | URL           |
+|--------|---------------|
+| POST   | `/api/carts`  |
+
+**Request body example:**
+
+```json
+{
+  "status": "PENDING",
+  "eventDate": "2025-06-15",
+  "items": [
+    {
+      "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "quantity": 2
+    },
+    {
+      "itemId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+**Fields:**
+- `status` (optional): PENDING (default), PAID, CANCELLED, COMPLETED
+- `eventDate` (optional): Date in YYYY-MM-DD format
+- `items` (required): Array of `{itemId, quantity}`
+
+**Success (201 Created):** Cart with id, status, eventDate, and items.
+
+### 8.4 Update cart
+
+| Method | URL                |
+|--------|--------------------|
+| PUT    | `/api/carts/{id}`  |
+
+**Request body:** Same as create (all fields optional). If `items` is provided, it replaces all existing items in the cart.
+
+**Success (200 OK):** Updated cart.
+
+### 8.5 Delete cart
+
+| Method | URL                |
+|--------|--------------------|
+| DELETE | `/api/carts/{id}`  |
+
+**Success (200 OK):** `message`: "Cart deleted", `data`: null.
+
+---
+
+## 9. Ratings API
+
+Base path: `/api/ratings`. Users can rate and comment on items. Rating is 1-5 stars with optional description/comment.
+
+- **GET `/api/ratings/item/{itemId}`** is **public** (no authentication). Other endpoints require JWT.
+
+### 9.1 Get ratings for an item (public)
+
+| Method | URL                            |
+|--------|--------------------------------|
+| GET    | `/api/ratings/item/{itemId}`   |
+
+Returns all ratings for a specific item. No authentication required.
+
+**Success (200 OK) – response example:**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 1,
+      "userId": 2,
+      "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "rating": 5,
+      "description": "Excellent quality! Highly recommend.",
+      "createdAt": "2025-02-16T14:00:00Z",
+      "updatedAt": null
+    },
+    {
+      "id": 2,
+      "userId": 3,
+      "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "rating": 4,
+      "description": "Good product, fast delivery.",
+      "createdAt": "2025-02-16T13:30:00Z",
+      "updatedAt": null
+    }
+  ]
+}
+```
+
+### 9.2 Get my ratings
+
+| Method | URL           |
+|--------|---------------|
+| GET    | `/api/ratings` |
+
+**Auth:** JWT required. Returns all ratings created by the current user.
+
+**Success (200 OK):** Array of rating responses.
+
+### 9.3 Get rating by ID
+
+| Method | URL                |
+|--------|--------------------|
+| GET    | `/api/ratings/{id}` |
+
+**Auth:** JWT required. **Success (200 OK):** Single rating. **Error (400):** Rating not found or not owned by user.
+
+### 9.4 Create rating
+
+| Method | URL           |
+|--------|---------------|
+| POST   | `/api/ratings` |
+
+**Auth:** JWT required.
+
+**Request body example:**
+
+```json
+{
+  "itemId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "rating": 5,
+  "description": "Amazing product! Exceeded my expectations."
+}
+```
+
+**Fields:**
+- `itemId` (required): The item being rated
+- `rating` (required): Integer 1-5
+- `description` (optional): Comment/description, max 1000 characters
+
+**Success (201 Created):** Rating with id, userId, itemId, rating, description, createdAt.
+
+### 9.5 Update rating
+
+| Method | URL                |
+|--------|--------------------|
+| PUT    | `/api/ratings/{id}` |
+
+**Auth:** JWT required.
+
+**Request body:** `rating` (optional, 1-5), `description` (optional, max 1000 chars).
+
+**Success (200 OK):** Updated rating.
+
+### 9.6 Delete rating
+
+| Method | URL                |
+|--------|--------------------|
+| DELETE | `/api/ratings/{id}` |
+
+**Auth:** JWT required.
+
+**Success (200 OK):** `message`: "Rating deleted", `data`: null.
+
+---
+
+## 10. Short link redirect (public)
 
 Resolve a short code and redirect to the full URL. No authentication. Increments the click count.
 
@@ -911,11 +1126,11 @@ Resolve a short code and redirect to the full URL. No authentication. Increments
 
 ---
 
-## 9. Admin API
+## 11. Admin API
 
 Requires a user with role **ADMIN** and a valid JWT.
 
-### 9.1 Dashboard (admin)
+### 11.1 Dashboard (admin)
 
 | Method | URL                     |
 |--------|-------------------------|
@@ -939,7 +1154,7 @@ Requires a user with role **ADMIN** and a valid JWT.
 
 ---
 
-### 9.2 List all QR codes (admin)
+### 11.2 List all QR codes (admin)
 
 Returns all short links (QR codes) from all users. Admin only.
 
@@ -974,7 +1189,7 @@ Each item includes `userId` so the admin can see which user owns the link. **Err
 
 ---
 
-### 9.3 List all image uploads (admin)
+### 11.3 List all image uploads (admin)
 
 Returns all Base64-uploaded images from all users. Admin only.
 
@@ -988,7 +1203,7 @@ Returns all Base64-uploaded images from all users. Admin only.
 
 ---
 
-### 9.4 List all categories (admin)
+### 11.4 List all categories (admin)
 
 Returns **all** categories from all users (active and inactive). Admin only.
 
@@ -1002,7 +1217,7 @@ Returns **all** categories from all users (active and inactive). Admin only.
 
 ---
 
-### 9.5 List all items (admin)
+### 11.5 List all items (admin)
 
 Returns **all** items from all users (active and inactive). Admin only.
 
@@ -1041,6 +1256,11 @@ Returns **all** items from all users (active and inactive). Admin only.
 | Items      | /api/items                 | POST | JWT   |
 | Items      | /api/items/{id}            | GET, PUT, DELETE | JWT |
 | Items      | /api/items/images/{userId}/{itemId} or /{itemId} | GET | No (public) |
+| Carts      | /api/carts                 | GET, POST | JWT   |
+| Carts      | /api/carts/{id}            | GET, PUT, DELETE | JWT |
+| Ratings    | /api/ratings/item/{itemId} | GET | No (public) |
+| Ratings    | /api/ratings               | GET, POST | JWT   |
+| Ratings    | /api/ratings/{id}          | GET, PUT, DELETE | JWT |
 | Serve image   | /i/{code}                  | GET    | No      |
 | Redirect   | /s/{code}                   | GET    | No      |
 | Admin      | /api/admin/dashboard        | GET    | JWT (ADMIN) |
