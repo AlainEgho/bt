@@ -2,6 +2,7 @@ package com.example.backend.controller;
 
 import com.example.backend.dto.ApiResponse;
 import com.example.backend.dto.CreateItemRequest;
+import com.example.backend.dto.ItemBuyerDto;
 import com.example.backend.dto.ItemResponse;
 import com.example.backend.dto.UpdateItemRequest;
 import com.example.backend.security.UserPrincipal;
@@ -34,6 +35,14 @@ public class ItemController {
     public ResponseEntity<ApiResponse<List<ItemResponse>>> listByCategory(@PathVariable String categoryId) {
         List<ItemResponse> items = itemService.findByCategoryId(categoryId);
         return ResponseEntity.ok(ApiResponse.success("OK", items));
+    }
+
+    /** Logged-in user (item owner): list users who have added his items to their carts. */
+    @GetMapping("/buyers")
+    public ResponseEntity<ApiResponse<List<ItemBuyerDto>>> listBuyersOfMyItems(
+            @AuthenticationPrincipal UserPrincipal principal) {
+        List<ItemBuyerDto> buyers = itemService.findBuyersOfMyItems(principal.getId());
+        return ResponseEntity.ok(ApiResponse.success("OK", buyers));
     }
 
     @GetMapping("/{id}")

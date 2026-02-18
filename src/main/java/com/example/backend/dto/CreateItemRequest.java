@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+/** Request to create an item. The item's user_id is set from the JWT (authenticated user), not from this DTO. */
 @Data
 public class CreateItemRequest {
 

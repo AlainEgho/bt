@@ -32,6 +32,7 @@ public class Item extends BaseAuditEntity {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Set from the authenticated user (JWT token); never from request body. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

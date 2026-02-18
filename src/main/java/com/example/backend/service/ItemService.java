@@ -32,6 +32,7 @@ public class ItemService {
     private final AddressRepository addressRepository;
     private final ContactRepository contactRepository;
     private final ItemDetailRepository itemDetailRepository;
+    private final CartItemRepository cartItemRepository;
 
     @Value("${app.upload.image-dir:uploads/images}")
     private String imageDir;
@@ -65,6 +66,14 @@ public class ItemService {
                 .toList();
     }
 
+    /** Carts that contain the given user's items; each result includes cart owner (buyer) and cart dates. */
+    @Transactional(readOnly = true)
+    public List<ItemBuyerDto> findBuyersOfMyItems(Long itemOwnerId) {
+        return cartItemRepository.findDistinctCartsByItemOwnerId(itemOwnerId).stream()
+                .map(ItemBuyerDto::fromCart)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public ItemResponse findById(String id, Long userId) {
         Item item = itemRepository.findByIdAndUser_Id(id, userId)
@@ -74,6 +83,7 @@ public class ItemService {
 
     @Transactional
     public ItemResponse create(CreateItemRequest request, Long userId) throws IOException {
+        // user_id is always taken from the JWT (authenticated user), never from the request
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Category category = categoryRepository.findById(request.getCategoryId())

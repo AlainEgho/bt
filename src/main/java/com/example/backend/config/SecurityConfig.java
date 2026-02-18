@@ -45,6 +45,10 @@ public class SecurityConfig {
             "/s/**",
             "/i/**",
             "/h2-console/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
             "/error"
     };
 
@@ -71,6 +75,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/categories/images/**").permitAll()
                         .requestMatchers("/api/items/images/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/invoices/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**", "/api/carts/**", "/api/ratings/**").authenticated()
                         .anyRequest().authenticated()
                 )

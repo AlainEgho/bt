@@ -816,7 +816,46 @@ Returns **active** items that belong to the given category. No authentication re
 
 **Success (200 OK):** `data` is an array of item responses (same shape as 7.1).
 
-### 7.3 Get item by ID
+### 7.3 List buyers of my items (item owner)
+
+| Method | URL                 |
+|--------|---------------------|
+| GET    | `/api/items/buyers` |
+
+**Auth:** JWT required. For the **logged-in user** (item owner), returns the list of **carts** that contain any of his items. Each entry includes the cart owner (buyer): `id`, `email`, `firstName`, `lastName`, plus **cart** fields: `cartId`, `cartEventDate`, `cartCreatedAt`.
+
+**Success (200 OK) – response example**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 2,
+      "email": "buyer@example.com",
+      "firstName": "John",
+      "lastName": "Buyer",
+      "cartId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "cartEventDate": "2025-06-15",
+      "cartCreatedAt": "2025-02-16T14:30:00Z"
+    },
+    {
+      "id": 5,
+      "email": "another@example.com",
+      "firstName": "Alice",
+      "lastName": "Shopper",
+      "cartId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "cartEventDate": "2025-07-20",
+      "cartCreatedAt": "2025-02-17T09:00:00Z"
+    }
+  ]
+}
+```
+
+**Note:** One row per cart that contains the seller's items (same buyer may appear for multiple carts). Empty array if no one has added the logged-in user's items to a cart.
+
+### 7.4 Get item by ID
 
 | Method | URL                |
 |--------|--------------------|
@@ -824,7 +863,7 @@ Returns **active** items that belong to the given category. No authentication re
 
 **Auth:** JWT required. **Success (200 OK):** single item with detail, address, contact. **Error (400):** Item not found or not owned by user.
 
-### 7.4 Create item
+### 7.5 Create item
 
 | Method | URL           |
 |--------|---------------|
@@ -871,7 +910,7 @@ Returns **active** items that belong to the given category. No authentication re
 
 **Success (201 Created):** Item with image saved first, then entity persisted (same flow as categories).
 
-### 7.5 Update item
+### 7.6 Update item
 
 | Method | URL                |
 |--------|--------------------|
@@ -879,7 +918,7 @@ Returns **active** items that belong to the given category. No authentication re
 
 **Auth:** JWT required. Same fields as create (except `categoryId`). Image/detail/address/contact can be updated or added.
 
-### 7.6 Delete item
+### 7.7 Delete item
 
 | Method | URL                |
 |--------|--------------------|
@@ -887,7 +926,7 @@ Returns **active** items that belong to the given category. No authentication re
 
 **Auth:** JWT required.
 
-### 7.7 Serve item image (public)
+### 7.8 Serve item image (public)
 
 | Method | URL                                  |
 |--------|--------------------------------------|
@@ -1253,6 +1292,7 @@ Returns **all** items from all users (active and inactive). Admin only.
 | Categories | /api/categories/images/{categoryId} | GET | No (public) |
 | Items      | /api/items                 | GET | No (public) |
 | Items      | /api/items/category/{categoryId} | GET | No (public) |
+| Items      | /api/items/buyers          | GET | JWT (item owner: users who added his items to their carts) |
 | Items      | /api/items                 | POST | JWT   |
 | Items      | /api/items/{id}            | GET, PUT, DELETE | JWT |
 | Items      | /api/items/images/{userId}/{itemId} or /{itemId} | GET | No (public) |
