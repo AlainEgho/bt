@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 @Component
 @RequiredArgsConstructor
-@Profile("!prod")
+//@Profile("!prod")
 public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
