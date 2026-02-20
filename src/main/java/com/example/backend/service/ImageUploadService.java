@@ -53,7 +53,12 @@ public class ImageUploadService {
             }
         }
 
-        byte[] bytes = Base64.getDecoder().decode(base64Data);
+        byte[] bytes;
+        try {
+            bytes = Base64.getDecoder().decode(base64Data);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid or empty Base64 image data", e);
+        }
         if (bytes == null || bytes.length == 0) {
             throw new IllegalArgumentException("Invalid or empty Base64 image data");
         }

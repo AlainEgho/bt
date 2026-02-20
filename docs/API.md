@@ -1,5 +1,9 @@
 # Backend API Documentation
 
+java  "-Dspring.profiles.active=prod" -jar .\backend-0.0.1-SNAPSHOT.jar
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=prod"           
+ .\mvnw.cmd install 
+
 Base URL: `http://localhost:8081` (or your deployed backend URL).
 
 All JSON APIs use **Content-Type: application/json**.
