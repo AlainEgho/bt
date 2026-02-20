@@ -1,6 +1,7 @@
 package com.example.backend.dto;
 
 import com.example.backend.entity.CartStatus;
+import com.example.backend.entity.PaymentMethod;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -12,6 +13,8 @@ import java.util.List;
 public class CreateCartRequest {
 
     private CartStatus status = CartStatus.PENDING;
+
+    private PaymentMethod paymentMethod;
 
     private LocalDate eventDate;
 

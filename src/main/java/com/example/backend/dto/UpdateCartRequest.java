@@ -1,6 +1,7 @@
 package com.example.backend.dto;
 
 import com.example.backend.entity.CartStatus;
+import com.example.backend.entity.PaymentMethod;
 import jakarta.validation.Valid;
 import lombok.Data;
 
@@ -11,6 +12,8 @@ import java.util.List;
 public class UpdateCartRequest {
 
     private CartStatus status;
+
+    private PaymentMethod paymentMethod;
 
     private LocalDate eventDate;
 

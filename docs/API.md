@@ -4,6 +4,10 @@ java  "-Dspring.profiles.active=prod" -jar .\backend-0.0.1-SNAPSHOT.jar
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=prod"           
  .\mvnw.cmd install 
 
+ npm run start
+ npm run serve:prod    
+  npx http-server  -p 4200 --fallback index.html
+
 Base URL: `http://localhost:8081` (or your deployed backend URL).
 
 All JSON APIs use **Content-Type: application/json**.
@@ -943,7 +947,7 @@ Returns the image binary. **Error (404):** Item not found or image missing.
 
 ## 8. Carts API
 
-Base path: `/api/carts`. A user can have multiple carts. Each cart contains multiple items with quantities. Cart has a status (PENDING, PAID, CANCELLED, COMPLETED) and an optional event date.
+Base path: `/api/carts`. A user can have multiple carts. Each cart contains multiple items with quantities. Cart has a **status** (PENDING, PAID, CANCELLED, COMPLETED), optional **payment method** (ONLINE, OFFLINE), and an optional event date. Payment is processed via **Process payment** (creates a **transaction** and updates cart status). Transaction history is available per cart and globally for the user.
 
 **All cart endpoints require authentication:** `Authorization: Bearer <token>`.
 
@@ -966,6 +970,7 @@ Base path: `/api/carts`. A user can have multiple carts. Each cart contains mult
       "id": "c1d2e3f4-a5b6-7890-cdef-123456789012",
       "userId": 1,
       "status": "PENDING",
+      "paymentMethod": "ONLINE",
       "eventDate": "2025-06-15",
       "items": [
         {
@@ -1005,6 +1010,7 @@ Base path: `/api/carts`. A user can have multiple carts. Each cart contains mult
 ```json
 {
   "status": "PENDING",
+  "paymentMethod": "ONLINE",
   "eventDate": "2025-06-15",
   "items": [
     {
@@ -1021,8 +1027,9 @@ Base path: `/api/carts`. A user can have multiple carts. Each cart contains mult
 
 **Fields:**
 - `status` (optional): PENDING (default), PAID, CANCELLED, COMPLETED
+- `paymentMethod` (optional): ONLINE or OFFLINE
 - `eventDate` (optional): Date in YYYY-MM-DD format
-- `items` (required): Array of `{itemId, quantity}`
+- `items` (required): Array of `{itemId, quantity}` (quantity min 1)
 
 **Success (201 Created):** Cart with id, status, eventDate, and items.
 
@@ -1032,7 +1039,7 @@ Base path: `/api/carts`. A user can have multiple carts. Each cart contains mult
 |--------|--------------------|
 | PUT    | `/api/carts/{id}`  |
 
-**Request body:** Same as create (all fields optional). If `items` is provided, it replaces all existing items in the cart.
+**Request body:** Same as create (all fields optional): `status`, `paymentMethod`, `eventDate`, `items`. If `items` is provided, it replaces all existing items in the cart.
 
 **Success (200 OK):** Updated cart.
 
@@ -1044,15 +1051,115 @@ Base path: `/api/carts`. A user can have multiple carts. Each cart contains mult
 
 **Success (200 OK):** `message`: "Cart deleted", `data`: null.
 
+### 8.6 Get cart total
+
+Returns the total amount for the cart (sum of item price × quantity from item details). Use before checkout to display total.
+
+| Method | URL                     |
+|--------|-------------------------|
+| GET    | `/api/carts/{id}/total` |
+
+**Success (200 OK):** `data` is a number (decimal), e.g. `"data": 99.50`. **Error (400):** Cart not found or not owned by user.
+
+### 8.7 Process payment (pay)
+
+Process payment for the cart using the chosen payment method (online or offline). Creates a **transaction** record and, on success, sets cart status to PAID and stores the payment method on the cart.
+
+| Method | URL                 |
+|--------|---------------------|
+| POST   | `/api/carts/{id}/pay` |
+
+**Request body:**
+
+| Field              | Type   | Required | Description                                      |
+|--------------------|--------|----------|--------------------------------------------------|
+| paymentMethod     | string | yes      | `ONLINE` or `OFFLINE`                            |
+| externalReference | string | no       | e.g. payment gateway id, cheque number            |
+
+**Example:**
+
+```json
+{
+  "paymentMethod": "ONLINE",
+  "externalReference": "gateway-txn-12345"
+}
+```
+
+**Success (201 Created):** `data` is the created transaction:
+
+```json
+{
+  "success": true,
+  "message": "Payment processed",
+  "data": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "userId": 1,
+    "cartId": "c1d2e3f4-a5b6-7890-cdef-123456789012",
+    "paymentMethod": "ONLINE",
+    "amount": 99.50,
+    "status": "SUCCESS",
+    "externalReference": "gateway-txn-12345",
+    "createdAt": "2025-02-20T12:00:00Z"
+  }
+}
+```
+
+**Errors:** 400 if cart not found or not owned by user; 400 if cart already PAID/COMPLETED or total is zero; 400 if payment method unsupported.
+
+### 8.8 List transactions for a cart
+
+List all payment transactions for a specific cart (payment history for that cart).
+
+| Method | URL                          |
+|--------|------------------------------|
+| GET    | `/api/carts/{id}/transactions` |
+
+**Success (200 OK):** `data` is an array of transactions (same shape as in 8.7). **Error (400):** Cart not found or not owned by user.
+
 ---
 
-## 9. Ratings API
+## 9. Transactions API
+
+Base path: `/api/transactions`. Lists payment transactions for the **current user** (all carts). Uses `user_id` for fast retrieval.
+
+**Authentication:** `Authorization: Bearer <token>`.
+
+### 9.1 List my transactions
+
+| Method | URL                 |
+|--------|---------------------|
+| GET    | `/api/transactions` |
+
+**Success (200 OK):** Array of transactions, newest first. Each has `id` (UUID string), `userId`, `cartId`, `paymentMethod`, `amount`, `status` (PENDING, SUCCESS, FAILED, REFUNDED), `externalReference`, `createdAt`.
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "userId": 1,
+      "cartId": "c1d2e3f4-a5b6-7890-cdef-123456789012",
+      "paymentMethod": "ONLINE",
+      "amount": 99.50,
+      "status": "SUCCESS",
+      "externalReference": "gateway-txn-12345",
+      "createdAt": "2025-02-20T12:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## 10. Ratings API
 
 Base path: `/api/ratings`. Users can rate and comment on items. Rating is 1-5 stars with optional description/comment.
 
 - **GET `/api/ratings/item/{itemId}`** is **public** (no authentication). Other endpoints require JWT.
 
-### 9.1 Get ratings for an item (public)
+### 10.1 Get ratings for an item (public)
 
 | Method | URL                            |
 |--------|--------------------------------|
@@ -1089,7 +1196,7 @@ Returns all ratings for a specific item. No authentication required.
 }
 ```
 
-### 9.2 Get my ratings
+### 10.2 Get my ratings
 
 | Method | URL           |
 |--------|---------------|
@@ -1099,7 +1206,7 @@ Returns all ratings for a specific item. No authentication required.
 
 **Success (200 OK):** Array of rating responses.
 
-### 9.3 Get rating by ID
+### 10.3 Get rating by ID
 
 | Method | URL                |
 |--------|--------------------|
@@ -1107,7 +1214,7 @@ Returns all ratings for a specific item. No authentication required.
 
 **Auth:** JWT required. **Success (200 OK):** Single rating. **Error (400):** Rating not found or not owned by user.
 
-### 9.4 Create rating
+### 10.4 Create rating
 
 | Method | URL           |
 |--------|---------------|
@@ -1132,7 +1239,7 @@ Returns all ratings for a specific item. No authentication required.
 
 **Success (201 Created):** Rating with id, userId, itemId, rating, description, createdAt.
 
-### 9.5 Update rating
+### 10.5 Update rating
 
 | Method | URL                |
 |--------|--------------------|
@@ -1144,7 +1251,7 @@ Returns all ratings for a specific item. No authentication required.
 
 **Success (200 OK):** Updated rating.
 
-### 9.6 Delete rating
+### 10.6 Delete rating
 
 | Method | URL                |
 |--------|--------------------|
@@ -1156,7 +1263,7 @@ Returns all ratings for a specific item. No authentication required.
 
 ---
 
-## 10. Short link redirect (public)
+## 11. Short link redirect (public)
 
 Resolve a short code and redirect to the full URL. No authentication. Increments the click count.
 
@@ -1169,7 +1276,7 @@ Resolve a short code and redirect to the full URL. No authentication. Increments
 
 ---
 
-## 11. Admin API
+## 12. Admin API
 
 Requires a user with role **ADMIN** and a valid JWT.
 
@@ -1302,6 +1409,10 @@ Returns **all** items from all users (active and inactive). Admin only.
 | Items      | /api/items/images/{userId}/{itemId} or /{itemId} | GET | No (public) |
 | Carts      | /api/carts                 | GET, POST | JWT   |
 | Carts      | /api/carts/{id}            | GET, PUT, DELETE | JWT |
+| Carts      | /api/carts/{id}/total      | GET | JWT   |
+| Carts      | /api/carts/{id}/pay        | POST | JWT   |
+| Carts      | /api/carts/{id}/transactions | GET | JWT   |
+| Transactions | /api/transactions         | GET | JWT   |
 | Ratings    | /api/ratings/item/{itemId} | GET | No (public) |
 | Ratings    | /api/ratings               | GET, POST | JWT   |
 | Ratings    | /api/ratings/{id}          | GET, PUT, DELETE | JWT |

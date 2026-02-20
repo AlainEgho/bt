@@ -20,6 +20,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
+    private final PaymentService paymentService;
 
     @Transactional(readOnly = true)
     public List<CartResponse> findAllByUserId(Long userId) {
@@ -44,6 +45,7 @@ public class CartService {
         cart.setId(UUID.randomUUID().toString());
         cart.setUser(user);
         cart.setStatus(request.getStatus() != null ? request.getStatus() : CartStatus.PENDING);
+        cart.setPaymentMethod(request.getPaymentMethod());
         cart.setEventDate(request.getEventDate());
         cart = cartRepository.save(cart);
 
@@ -69,6 +71,9 @@ public class CartService {
 
         if (request.getStatus() != null) {
             cart.setStatus(request.getStatus());
+        }
+        if (request.getPaymentMethod() != null) {
+            cart.setPaymentMethod(request.getPaymentMethod());
         }
         if (request.getEventDate() != null) {
             cart.setEventDate(request.getEventDate());
@@ -105,5 +110,12 @@ public class CartService {
         return cartRepository.findByUser_IdAndStatusOrderByCreatedAtDesc(userId, status).stream()
                 .map(CartResponse::fromEntity)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public java.math.BigDecimal getCartTotal(String id, Long userId) {
+        Cart cart = cartRepository.findByIdAndUser_Id(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart not found"));
+        return paymentService.computeCartTotal(cart);
     }
 }

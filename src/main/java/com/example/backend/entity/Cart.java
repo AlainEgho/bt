@@ -32,6 +32,10 @@ public class Cart extends BaseAuditEntity {
     @Column(nullable = false, length = 20)
     private CartStatus status = CartStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20)
+    private PaymentMethod paymentMethod;
+
     @Column(name = "event_date")
     private LocalDate eventDate;
 

@@ -85,7 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/images/**").permitAll()
                         .requestMatchers("/api/items/images/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/invoices/**", "/api/bills/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**", "/api/carts/**", "/api/ratings/**").authenticated()
+                        .requestMatchers("/api/invoices/**", "/api/bills/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**", "/api/carts/**", "/api/transactions/**", "/api/ratings/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

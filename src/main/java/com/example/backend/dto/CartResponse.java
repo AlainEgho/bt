@@ -1,6 +1,7 @@
 package com.example.backend.dto;
 
 import com.example.backend.entity.CartStatus;
+import com.example.backend.entity.PaymentMethod;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,6 +16,7 @@ public class CartResponse {
     private String id;
     private Long userId;
     private CartStatus status;
+    private PaymentMethod paymentMethod;
     private LocalDate eventDate;
     private List<CartItemDto> items;
     private Instant createdAt;
@@ -28,6 +30,7 @@ public class CartResponse {
                 .id(cart.getId())
                 .userId(cart.getUser() != null ? cart.getUser().getId() : null)
                 .status(cart.getStatus())
+                .paymentMethod(cart.getPaymentMethod())
                 .eventDate(cart.getEventDate())
                 .items(items)
                 .createdAt(cart.getCreatedAt())
