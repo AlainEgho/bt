@@ -35,6 +35,10 @@ letsencrypt/*.pem
 letsencrypt/*.crt
 letsencrypt/*.key
 
+# Self-signed SSL (dev only; do not commit private key)
+ssl-selfsigned/key.pem
+ssl-selfsigned/*.key
+
 # OS
 .DS_Store
 Thumbs.db
