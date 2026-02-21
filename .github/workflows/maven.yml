@@ -36,12 +36,16 @@ jobs:
 
 # This command creates the artifact (e.g., a JAR file) in the 'target/' directory
 
-    - name: Upload Maven artifact
+    - name: Prepare deployment bundle
+      run: |
+        mkdir bundle
+        cp target/*.jar bundle/application.jar
+        cp -r .platform bundle/ || true
+        cd bundle
+        zip -r ../deploy.zip .
+
+    - name: Upload deployment artifact
       uses: actions/upload-artifact@v4
       with:
-          # The name for the artifact in the GitHub Actions UI
-          name: my-maven-artifact
-          # The path to the artifact file(s)
-          path: target/*.jar 
-          # You can adjust the path to match your project's
-
+        name: elasticbeanstalk-bundle
+        path: deploy.zip
