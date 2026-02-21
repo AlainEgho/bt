@@ -30,6 +30,11 @@ hs_err_pid*
 # Uploaded images (server storage)
 uploads/
 
+# Let's Encrypt certs (never commit private keys)
+letsencrypt/*.pem
+letsencrypt/*.crt
+letsencrypt/*.key
+
 # OS
 .DS_Store
 Thumbs.db
