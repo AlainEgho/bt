@@ -238,7 +238,174 @@ No authentication is required to call this endpoint; the token to validate is pr
 
 ---
 
-## 2. Health
+## 2. Online users and messaging
+
+When a user signs in (login), they are marked as **signed in**. Their **last activity** is updated on every authenticated request. If there is **no activity for more than one hour**, the sign-in record is removed (they no longer appear as online). Other users can list **online users** and **send messages** to each other.
+
+**Auth:** All endpoints require `Authorization: Bearer <token>`.
+
+**How the second user (receiver) gets messages:** Both users use the same APIs. The receiver (second user) fetches the conversation by calling **GET `/api/messages/conversation/{userId}`** with the **sender’s user id**. They can also use **GET `/api/messages/conversations`** to list all threads (including the one with the sender); each item has `peerUserId`, last message preview, and `unreadCount`. So: User A sends to User B → User B calls `GET /api/messages/conversation/{userA_id}` (or opens the thread from `GET /api/messages/conversations`) to see the messages.
+
+### 2.1 List online users
+
+Returns users currently signed in (activity within the last hour). Excludes the current user. Use this so the frontend can show "who is online" and let the user start a conversation.
+
+| Method | URL                 |
+|--------|---------------------|
+| GET    | `/api/users/online` |
+
+**Success (200 OK)**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "id": 2,
+      "email": "jane@example.com",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "country": "United States"
+    }
+  ]
+}
+```
+
+### 2.2 Send a message
+
+Send a message from the current user to another user.
+
+| Method | URL             |
+|--------|-----------------|
+| POST   | `/api/messages` |
+
+**Request body**
+
+| Field       | Type   | Required | Description        |
+|------------|--------|----------|--------------------|
+| receiverId | number | yes      | User ID of recipient |
+| content    | string | yes      | Message text (max 10000 chars) |
+
+**Example**
+
+```json
+{
+  "receiverId": 2,
+  "content": "Hi, are you available?"
+}
+```
+
+**Success (201 Created)**
+
+```json
+{
+  "success": true,
+  "message": "Message sent",
+  "data": {
+    "id": 1,
+    "senderId": 1,
+    "receiverId": 2,
+    "content": "Hi, are you available?",
+    "createdAt": "2025-02-21T10:00:00Z",
+    "readAt": null,
+    "fromCurrentUser": true
+  }
+}
+```
+
+### 2.3 Get conversation with a user
+
+Paginated messages between the current user and the given user (either direction).
+
+| Method | URL                                |
+|--------|------------------------------------|
+| GET    | `/api/messages/conversation/{userId}` |
+
+**Query params:** `page` (default 0), `size` (default 50).
+
+**Success (200 OK):** `data` is a Spring Page of message objects (same shape as 2.2), ordered newest first.
+
+### 2.4 List conversations
+
+List all conversations (users the current user has exchanged messages with), with last message preview and unread count.
+
+| Method | URL                      |
+|--------|--------------------------|
+| GET    | `/api/messages/conversations` |
+
+**Success (200 OK)**
+
+```json
+{
+  "success": true,
+  "message": "OK",
+  "data": [
+    {
+      "peerUserId": 2,
+      "peerFirstName": "Jane",
+      "peerLastName": "Doe",
+      "peerEmail": "jane@example.com",
+      "lastMessagePreview": "Hi, are you available?",
+      "lastMessageAt": "2025-02-21T10:00:00Z",
+      "unreadCount": 0
+    }
+  ]
+}
+```
+
+### 2.5 Mark message as read
+
+Mark a message as read (receiver only). Sets `readAt` to the current time.
+
+| Method | URL                     |
+|--------|-------------------------|
+| PATCH  | `/api/messages/{id}/read` |
+
+**Success (200 OK):** `message`: "Message marked as read".
+
+### 2.6 WebSocket – real-time new message (receiver)
+
+The **receiver** can listen for new messages over a WebSocket so they don’t have to poll. When someone sends them a message, the server pushes a `MessageResponse` to their subscribed queue.
+
+**Endpoint (with SockJS fallback):** `GET /ws` (e.g. `ws://localhost:8081/ws` or `http://localhost:8081/ws` with SockJS).
+
+**Authentication:** Pass the JWT as a query parameter so the handshake can identify the user:
+
+```
+ws://localhost:8081/ws?token=YOUR_JWT_ACCESS_TOKEN
+```
+
+**STOMP:**
+
+- **Connect** to the endpoint with the token above.
+- **Subscribe** to destination: `/user/queue/messages`  
+  (Spring routes this to the queue for the authenticated user.)
+- **Payload when a new message arrives:** same shape as the message in **2.2** (Send a message), e.g.:
+
+```json
+{
+  "id": 1,
+  "senderId": 1,
+  "receiverId": 2,
+  "content": "Hi, are you available?",
+  "createdAt": "2025-02-21T10:00:00Z",
+  "readAt": null,
+  "fromCurrentUser": false
+}
+```
+
+**Frontend (example with SockJS + STOMP):**
+
+1. Connect: e.g. `new SockJS('http://localhost:8081/ws?token=' + accessToken)`.
+2. Over that connection, connect STOMP and then subscribe: `stompClient.subscribe('/user/queue/messages', callback)`.
+3. In the callback, handle incoming messages (e.g. append to the current conversation or show a notification).
+
+Only the **receiver** (user whose JWT is used when connecting) receives pushes for messages sent to them.
+
+---
+
+## 3. Health
 
 | Method | URL             |
 |--------|-----------------|
@@ -256,7 +423,7 @@ No authentication is required to call this endpoint; the token to validate is pr
 
 ---
 
-## 3. Invoices API
+## 4. Invoices API
 
 All invoice endpoints require authentication: `Authorization: Bearer <token>`.
 
@@ -390,7 +557,7 @@ Base path: `/api/invoices`.
 
 ---
 
-## 4. Shorteners API
+## 5. Shorteners API
 
 All shortener endpoints require authentication: `Authorization: Bearer <token>`.
 
@@ -544,7 +711,7 @@ The short link is then available at: `https://your-api-host/s/{shortCode}` (e.g.
 
 ---
 
-## 5. Image uploads API (Base64)
+## 6. Image uploads API (Base64)
 
 Upload an image as Base64; it is stored on the server and accessible via a short link. Use the returned `imageUrl` in a QR code or shortener. **New feature:** separate from shorteners; uses its own entity and `/i/{code}` path.
 
@@ -624,7 +791,7 @@ Returns the image file. No authentication. Use this URL in a QR code or short li
 
 ---
 
-## 6. Categories API
+## 7. Categories API
 
 Base path: `/api/categories`. Categories use **UUID** as the identifier (not Long).
 
@@ -792,7 +959,7 @@ Returns the image file for a category. No authentication required.
 
 ---
 
-## 7. Items API
+## 8. Items API
 
 Base path: `/api/items`. Items have String id (UUID string), same image/active pattern as categories, and belong to a **category**. They can have optional **detail** (quantity, price), **address** (name, longitude, latitude), and **contact** (firstName, lastName, phone).
 
@@ -991,7 +1158,7 @@ Returns the image binary. **Error (404):** Item not found or image missing.
 
 ---
 
-## 8. Carts API
+## 9. Carts API
 
 Base path: `/api/carts`. A user can have multiple carts. Each cart contains multiple items with quantities. Cart has a **status** (PENDING, PAID, CANCELLED, COMPLETED), optional **payment method** (ONLINE, OFFLINE), and an optional event date. Payment is processed via **Process payment** (creates a **transaction** and updates cart status). Transaction history is available per cart and globally for the user.
 
@@ -1164,7 +1331,7 @@ List all payment transactions for a specific cart (payment history for that cart
 
 ---
 
-## 9. Transactions API
+## 10. Transactions API
 
 Base path: `/api/transactions`. Lists payment transactions for the **current user** (all carts). Uses `user_id` for fast retrieval.
 
@@ -1199,7 +1366,7 @@ Base path: `/api/transactions`. Lists payment transactions for the **current use
 
 ---
 
-## 10. Ratings API
+## 11. Ratings API
 
 Base path: `/api/ratings`. Users can rate and comment on items. Rating is 1-5 stars with optional description/comment.
 
@@ -1309,7 +1476,7 @@ Returns all ratings for a specific item. No authentication required.
 
 ---
 
-## 11. Short link redirect (public)
+## 12. Short link redirect (public)
 
 Resolve a short code and redirect to the full URL. No authentication. Increments the click count.
 
@@ -1322,7 +1489,7 @@ Resolve a short code and redirect to the full URL. No authentication. Increments
 
 ---
 
-## 12. Admin API
+## 13. Admin API
 
 Requires a user with role **ADMIN** and a valid JWT.
 
@@ -1435,6 +1602,12 @@ Returns **all** items from all users (active and inactive). Admin only.
 | Auth       | /api/auth/login             | POST   | No      |
 | Auth       | /api/auth/verify-email      | GET/POST | No    |
 | Auth       | /api/auth/validate-token    | GET    | No (send Bearer token to validate) |
+| Users      | /api/users/online            | GET    | JWT (list signed-in users) |
+| Messages   | /api/messages               | POST   | JWT (send message) |
+| Messages   | /api/messages/conversation/{userId} | GET | JWT |
+| Messages   | /api/messages/conversations | GET    | JWT |
+| Messages   | /api/messages/{id}/read     | PATCH  | JWT |
+| WebSocket  | /ws?token=JWT               | GET (WS) | JWT (receiver subscribes to /user/queue/messages) |
 | Health     | /api/health                 | GET    | No      |
 | Invoices   | /api/invoices               | GET, POST | JWT   |
 | Invoices   | /api/invoices/{id}          | GET, PUT, DELETE | JWT |

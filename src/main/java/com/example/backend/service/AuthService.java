@@ -11,6 +11,7 @@ import com.example.backend.repository.RoleRepository;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.VerificationTokenRepository;
 import com.example.backend.security.JwtTokenProvider;
+import com.example.backend.service.UserSignInService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,6 +36,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final EmailService emailService;
+    private final UserSignInService userSignInService;
 
     @Transactional
     public AuthResponse signUp(SignUpRequest request) {
@@ -58,6 +60,7 @@ public class AuthService {
         user.getRoles().add(roleRepository.getReferenceById(userRole.getId()));
 
         user = userRepository.save(user);
+        userSignInService.recordSignIn(user.getId());
 
         String token = UUID.randomUUID().toString().replace("-", "");
         VerificationToken verificationToken = new VerificationToken(
@@ -83,6 +86,7 @@ public class AuthService {
 
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow();
+        userSignInService.recordSignIn(user.getId());
 
         String jwt = tokenProvider.generateToken(authentication);
         return AuthResponse.fromUser(user, jwt);

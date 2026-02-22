@@ -20,10 +20,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
+    private final com.example.backend.service.UserSignInService userSignInService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService,
+                                    com.example.backend.service.UserSignInService userSignInService) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
+        this.userSignInService = userSignInService;
     }
 
     @Override
@@ -44,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                userSignInService.refreshActivity(userDetails.getId());
             }
         } catch (Exception e) {
             logger.debug("Cannot set user authentication", e);

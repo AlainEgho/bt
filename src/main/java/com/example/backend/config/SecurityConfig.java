@@ -41,6 +41,8 @@ public class SecurityConfig {
     private static final String[] PUBLIC_URLS = {
             "/api/auth/**",
             "/api/health",
+            "/ws",
+            "/ws/**",
             "/api/categories",           // GET categories (public)
             "/api/categories/images/**",
             "/api/items",                // GET items (public)
@@ -85,7 +87,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/images/**").permitAll()
                         .requestMatchers("/api/items/images/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/api/invoices/**", "/api/bills/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**", "/api/carts/**", "/api/transactions/**", "/api/ratings/**").authenticated()
+                        .requestMatchers("/api/invoices/**", "/api/bills/**", "/api/shorteners/**", "/api/qr-codes/**", "/api/image-uploads/**", "/api/categories/**", "/api/items/**", "/api/carts/**", "/api/transactions/**", "/api/ratings/**", "/api/users/**", "/api/messages/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
