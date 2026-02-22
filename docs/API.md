@@ -8,6 +8,11 @@ java  "-Dspring.profiles.active=prod" -jar .\backend-0.0.1-SNAPSHOT.jar
  npm run serve:prod    
   npx http-server  -p 4200 --fallback index.html
 
+from front end redirect
+deploy on prod remove ssl
+
+
+
 Base URL: `http://localhost:8081` (or your deployed backend URL).
 
 All JSON APIs use **Content-Type: application/json**.
@@ -68,6 +73,7 @@ Register a new user. Returns a JWT and user info. A verification email is sent i
 | password    | string | yes      | Min 6, max 100                       |
 | address     | string | no       | Max 500 chars                         |
 | phoneNumber | string | no       | Max 30 chars                          |
+| country     | string | no       | Max 100 chars                         |
 | userType    | string | no       | `INDIVIDUAL` or `BUSINESS`; default `INDIVIDUAL` |
 
 **Example**
@@ -80,6 +86,7 @@ Register a new user. Returns a JWT and user info. A verification email is sent i
   "password": "securePass123",
   "address": "456 Oak Ave",
   "phoneNumber": "+1 555 123 4567",
+  "country": "United States",
   "userType": "INDIVIDUAL"
 }
 ```
@@ -97,6 +104,7 @@ Register a new user. Returns a JWT and user info. A verification email is sent i
     "email": "jane@example.com",
     "firstName": "Jane",
     "lastName": "Doe",
+    "country": "United States",
     "userType": "INDIVIDUAL",
     "emailVerified": false,
     "roles": ["USER"]
@@ -143,6 +151,7 @@ Authenticate and receive a JWT.
     "email": "jane@example.com",
     "firstName": "Jane",
     "lastName": "Doe",
+    "country": "United States",
     "userType": "INDIVIDUAL",
     "emailVerified": true,
     "roles": ["USER"]

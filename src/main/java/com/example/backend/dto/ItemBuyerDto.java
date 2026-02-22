@@ -16,6 +16,7 @@ public class ItemBuyerDto {
     private String email;
     private String firstName;
     private String lastName;
+    private String country;
     private String cartId;
     private LocalDate cartEventDate;
     private Instant cartCreatedAt;
@@ -27,6 +28,7 @@ public class ItemBuyerDto {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .country(user.getCountry())
                 .build();
     }
 
@@ -39,6 +41,7 @@ public class ItemBuyerDto {
                 .email(user != null ? user.getEmail() : null)
                 .firstName(user != null ? user.getFirstName() : null)
                 .lastName(user != null ? user.getLastName() : null)
+                .country(user != null ? user.getCountry() : null)
                 .cartId(cart.getId())
                 .cartEventDate(cart.getEventDate())
                 .cartCreatedAt(cart.getCreatedAt())

@@ -38,6 +38,9 @@ public class User {
     @Column(length = 30)
     private String phoneNumber;
 
+    @Column(length = 100)
+    private String country;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "user_type", nullable = false, length = 20)
     private UserType userType = UserType.INDIVIDUAL;

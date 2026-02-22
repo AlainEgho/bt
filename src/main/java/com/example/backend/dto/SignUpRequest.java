@@ -32,6 +32,9 @@ public class SignUpRequest {
     @Size(max = 30)
     private String phoneNumber;
 
+    @Size(max = 100)
+    private String country;
+
     /** Optional. Defaults to INDIVIDUAL if not set. */
     private UserType userType;
 }

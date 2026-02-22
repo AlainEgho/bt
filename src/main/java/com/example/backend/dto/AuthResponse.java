@@ -23,6 +23,7 @@ public class AuthResponse {
     private String email;
     private String firstName;
     private String lastName;
+    private String country;
     private UserType userType;
     private boolean emailVerified;
     private Set<String> roles;
@@ -39,6 +40,7 @@ public class AuthResponse {
                 .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .country(user.getCountry())
                 .userType(user.getUserType())
                 .emailVerified(user.isEmailVerified())
                 .roles(roleNames)

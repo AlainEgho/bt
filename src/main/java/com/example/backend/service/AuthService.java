@@ -49,6 +49,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAddress(request.getAddress());
         user.setPhoneNumber(request.getPhoneNumber());
+        user.setCountry(request.getCountry());
         user.setUserType(request.getUserType() != null ? request.getUserType() : UserType.INDIVIDUAL);
         user.setEmailVerified(false);
 
