@@ -366,46 +366,118 @@ Mark a message as read (receiver only). Sets `readAt` to the current time.
 
 ### 2.6 WebSocket – real-time new message (receiver)
 
-The **receiver** can listen for new messages over a WebSocket so they don’t have to poll. When someone sends them a message, the server pushes a `MessageResponse` to their subscribed queue.
-
+The **receiver** can listen
 **Endpoint (with SockJS fallback):** `GET /ws` (e.g. `ws://localhost:8081/ws` or `http://localhost:8081/ws` with SockJS).
 
-**Authentication:** Pass the JWT as a query parameter so the handshake can identify the user:
+**Authentication:** Pass the JWT as a query parameter: `ws://localhost:8081/ws?token=YOUR_JWT_ACCESS_TOKEN`
 
-```
-ws://localhost:8081/ws?token=YOUR_JWT_ACCESS_TOKEN
-```
-
-**STOMP:**
-
-- **Connect** to the endpoint with the token above.
-- **Subscribe** to destination: `/user/queue/messages`  
-  (Spring routes this to the queue for the authenticated user.)
-- **Payload when a new message arrives:** same shape as the message in **2.2** (Send a message), e.g.:
-
-```json
-{
-  "id": 1,
-  "senderId": 1,
-  "receiverId": 2,
-  "content": "Hi, are you available?",
-  "createdAt": "2025-02-21T10:00:00Z",
-  "readAt": null,
-  "fromCurrentUser": false
-}
-```
-
-**Frontend (example with SockJS + STOMP):**
-
-1. Connect: e.g. `new SockJS('http://localhost:8081/ws?token=' + accessToken)`.
-2. Over that connection, connect STOMP and then subscribe: `stompClient.subscribe('/user/queue/messages', callback)`.
-3. In the callback, handle incoming messages (e.g. append to the current conversation or show a notification).
-
-Only the **receiver** (user whose JWT is used when connecting) receives pushes for messages sent to them.
+**STOMP:** Connect with the token above, then subscribe to `/user/queue/messages`. Incoming payload is the same shape as in 2.2 (id, senderId, receiverId, content, createdAt, readAt, fromCurrentUser). Only the receiver receives pushes.
 
 ---
 
-## 3. Health
+## 3. Wall API
+
+The **wall** is a global feed where **all authenticated users** can publish and read posts. Posts can be **text** and/or **image**. They are **automatically deleted after 1 month** (configurable). Listing supports **pagination and a maximum page size (limit)**.
+
+**Auth:** All endpoints require `Authorization: Bearer <token>`.
+
+### 3.1 Publish a post to the wall
+
+| Method | URL               |
+|--------|-------------------|
+| POST   | `/api/wall/posts` |
+
+**Request body**
+
+| Field        | Type   | Required | Description                                                                 |
+|--------------|--------|----------|-----------------------------------------------------------------------------|
+| content      | string | no*      | Text content (max 10000 chars)                                              |
+| imagePath    | string | no*      | Image URL or path (e.g. from `POST /api/image-uploads`). Ignored if `imageBase64` is set. |
+| imageBase64  | string | no*      | Image as base64 (raw or data URL `data:image/png;base64,...`). Server uploads and saves it, then stores the resulting URL. |
+
+\* At least one of `content`, `imagePath`, or `imageBase64` must be provided.
+
+**Example (text only)**
+
+```json
+{
+  "content": "Hello everyone! Here is my update."
+}
+```
+
+**Example (text + image via URL)**  
+Upload the image first via `POST /api/image-uploads`, then create the post with the returned URL:
+
+```json
+{
+  "content": "Check out this photo",
+  "imagePath": "http://localhost:8081/i/abc12"
+}
+```
+
+**Example (text + image via base64)**  
+Send the image as base64; the server saves it and stores the resulting URL:
+
+```json
+{
+  "content": "Check out this photo",
+  "imageBase64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+}
+```
+
+**Example (image only)**
+
+```json
+{
+  "content": null,
+  "imagePath": "http://localhost:8081/i/xyz"
+}
+```
+
+Or image only with base64: `{ "imageBase64": "..." }`.
+
+**Success (201 Created)**
+
+```json
+{
+  "success": true,
+  "message": "Post published",
+  "data": {
+    "id": 1,
+    "authorId": 1,
+    "authorFirstName": "Jane",
+    "authorLastName": "Doe",
+    "authorEmail": "jane@example.com",
+    "content": "Hello everyone!",
+    "imagePath": null,
+    "createdAt": "2025-02-21T12:00:00Z"
+  }
+}
+```
+
+### 3.2 List wall posts (paginated)
+
+All users can read the wall. Newest first. Posts older than 1 month are removed by a scheduled job.
+
+| Method | URL               |
+|--------|-------------------|
+| GET    | `/api/wall/posts` |
+
+**Query parameters**
+
+| Param  | Type    | Default | Description                          |
+|--------|---------|---------|--------------------------------------|
+| page   | integer | 0       | Page number (0-based)                |
+| size   | integer | 20      | Page size                            |
+| limit  | integer | 100     | Maximum allowed page size (server caps `size` at this) |
+
+**Success (200 OK):** `data` is a Spring Page of wall post objects (same shape as in 3.1), with pagination metadata (`totalElements`, `totalPages`, `number`, `size`, etc.).
+
+**Note:** Posts are kept for 30 days (configurable via `app.wall.retention-days`), then deleted automatically.
+
+---
+
+## 4. Health for new messages over a WebSocket so they don’t have to poll. When someone sends them a message, the server pushes a `MessageResponse` to their subscribed queue.
 
 | Method | URL             |
 |--------|-----------------|
@@ -1608,6 +1680,7 @@ Returns **all** items from all users (active and inactive). Admin only.
 | Messages   | /api/messages/conversations | GET    | JWT |
 | Messages   | /api/messages/{id}/read     | PATCH  | JWT |
 | WebSocket  | /ws?token=JWT               | GET (WS) | JWT (receiver subscribes to /user/queue/messages) |
+| Wall       | /api/wall/posts             | GET, POST | JWT (all users can read and publish) |
 | Health     | /api/health                 | GET    | No      |
 | Invoices   | /api/invoices               | GET, POST | JWT   |
 | Invoices   | /api/invoices/{id}          | GET, PUT, DELETE | JWT |
